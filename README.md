@@ -1,34 +1,44 @@
-Autentification JWT avec Symfony
+# Autentification JWT avec Symfony
 Projet dans lequel on utilise Symfony Security et le Lexik JWT Bundle pour créer une inscription avec hashage de mot de passe et une authentification avec JWT
 
-How To Use
-Cloner le projet
-Créer la base de données (symfony_auth_rest par défaut) et importer le database.sql dedans
-Faire un composer install
-Générer les clés privée/publique avec php bin/console lexik:jwt:generate-keypair (si ça ne marche pas sur windows, installer OpenSSL, fichier d'installation disponible sur le teams)
-Lancer le serveur avec symfony server:start
-Pour se logger
-Envoyer une requête POST vers http://localhost:8000/api/login avec comme body :
+## How To Use
+1. Cloner le projet
+2. Créer la base de données (`symfony_auth_rest` par défaut) et importer le database.sql dedans
+3. Faire un `composer install`
+4. Générer les clés privée/publique avec `php bin/console lexik:jwt:generate-keypair` (si ça ne marche pas sur windows, installer OpenSSL, fichier d'installation disponible sur le teams)
+5. Lancer le serveur avec `symfony server:start`
+
+## Pour se logger
+1. Envoyer une requête POST vers http://localhost:8000/api/login avec comme body :
+```json
 {
     "username":"test@test.com",
     "password": "1234"
 }
-Copier la valeur du token renvoyée
-Pour tester le token, faire une requête vers http://localhost:8000/api/protected en GET en mettant dans l'onglet Auth -> Bearer le token copié précédemment
-Exercices
-Créer le front et le formulaire d'inscription
-Générer un projet angular-auth avec routing
-Générer un HomeComponent et lui assigner la route '/'
-Rajouter le HttpClientModule et le FormsModule dans l'application
-Générer un RegisterComponent et le lier à la route '/register'
-Créer un fichier entities.ts et dedans faire une interface User qui va reprendre les propriétés de l'entité PHP
-Générer un AuthService et dedans faire une méthode addUser(user:User) qui va faire un post sur la route /api/user du serveur
-Dans le RegisterComponent faire un formulaire avec email et mot de passe et faire qu'au submit ça fasse un addUser
-L'Authentification
-Création de l'entité
-Dépendance nécessaire (si pas déjà installée) : composer req security
+```
+2. Copier la valeur du token renvoyée
+3. Pour tester le token, faire une requête vers http://localhost:8000/api/protected en GET en mettant dans l'onglet Auth -> Bearer le token copié précédemment
 
-On commence par créer une entité qui servira de user. Elle peut s'appeler comme on le souhaite, avoir n'importe quelles propriétés, pour être utilisée comme user il faut simplement qu'elle implémente les interface UserInterface et PasswordAuthenticatedUserInterface
+
+## Exercices
+### Créer le front et le formulaire d'inscription
+1. Générer un projet `angular-auth` avec routing
+2. Générer un HomeComponent et lui assigner la route '/'
+3. Rajouter le HttpClientModule et le FormsModule dans l'application
+4. Générer un RegisterComponent et le lier à la route '/register'
+5. Créer un fichier entities.ts et dedans faire une interface User qui va reprendre les propriétés de l'entité PHP
+6. Générer un AuthService et dedans faire une méthode addUser(user:User) qui va faire un post sur la route /api/user du serveur
+7. Dans le RegisterComponent faire un formulaire avec email et mot de passe et faire qu'au submit ça fasse un addUser
+
+
+## L'Authentification
+
+### Création de l'entité
+Dépendance nécessaire (si pas déjà installée) : `composer req security` 
+
+On commence par créer une entité qui servira de user. Elle peut s'appeler comme on le souhaite, avoir n'importe quelles propriétés, pour être utilisée comme user il faut simplement qu'elle implémente les interface `UserInterface` et `PasswordAuthenticatedUserInterface`
+
+```php
 
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -62,8 +72,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 	public function getUserIdentifier(): string {
         return $this->email;
 	}
-On crée un UserRepository avec un findByEmail(string $email):?User (ou n'importe quoi d'autre que email, selon l'identifiant choisit)
+```
 
+On crée un UserRepository avec un `findByEmail(string $email):?User` (ou n'importe quoi d'autre que email, selon l'identifiant choisit)
+
+```php
     public function findByEmail(string $email):?User {
         
         $connection = Database::getConnection();
@@ -75,8 +88,11 @@ On crée un UserRepository avec un findByEmail(string $email):?User (ou n'import
         }
         return null;
    }
+```
+
 On crée une classe provider qui indiquera à Symfony comment récupérer un User dans la base de données lors d'une connexion. Cette classe doit implémenter l'interface UserProviderInterface
 
+```php
 class UserProvider implements UserProviderInterface {
 
     public function __construct(private UserRepository $repo){}
@@ -110,34 +126,41 @@ class UserProvider implements UserProviderInterface {
         return $class == User::class;
     }
 }
-Dans le fichier config/packages/security.yaml, on rajoute un provider indiquant à symfony comment récupérer le user
+```
 
+
+Dans le fichier `config/packages/security.yaml`, on rajoute un provider indiquant à symfony comment récupérer le user
+
+```yaml
 security:
     # ...
     providers:
         user_provider:
             id: App\Security\UserProvider
-Route d'inscription
-On crée une route d'inscription dans un contrôleur dans laquelle il faudra :
+```
 
-Récupérer les données d'inscription obligatoire (au minimum identifiant et mot de passe) et les valider
-Vérifier qu'un user avec l'identifiant donné n'existe pas déjà
-Hasher le mot de passe et l'assigner à l'instance de l'entité
-Assigner les valeurs par défaut nécessaire (par exemple le rôle par défaut, un panier vide si besoin, la date d'inscription, etc.)
-Faire persister le user Exemple de ces différentes étapes ici dans la méthode register()
-Authentification par JWT
-Dépendance nécessaire (si pas déjà installée) : composer req jwt
+### Route d'inscription
+On crée une route d'inscription dans un contrôleur dans laquelle il faudra : 
+* Récupérer les données d'inscription obligatoire (au minimum identifiant et mot de passe) et les valider
+* Vérifier qu'un user avec l'identifiant donné n'existe pas déjà
+* Hasher le mot de passe et l'assigner à l'instance de l'entité
+* Assigner les valeurs par défaut nécessaire (par exemple le rôle par défaut, un panier vide si besoin, la date d'inscription, etc.)
+* Faire persister le user
+Exemple de ces différentes étapes [ici dans la méthode register()](src/Controller/AuthController.php)
+
+### Authentification par JWT
+Dépendance nécessaire (si pas déjà installée) : `composer req jwt` 
 
 Dans le cadre d'une application client-serveur, une des manières d'authentification les plus utilisées est celle par JWT. Le flow d'authentification est le suivant :
+1. On fait une requête avec nos credentials (email/password par exemple) vers une route de login. Le serveur vérifie si un user avec cet identifiant existe, si oui on récupère le password hashé stocké en base de donnée, on utilise ses information pour hasher le mot de passe de login de la même manière, si les deux hash correspondent, c'est correct, on crée un JWT renvoyé au client
+2. Le client stock le JWT quelque part (en localStorage par exemple). Toute nouvelle requête contiendra le JWT dans ses Authorization Headers
+3. Lorsque le serveur reçoit une requête avec un JWT, il vérifie la validité de celui ci (est-ce qu'il a été altéré, sa signature est-elle ok, est-il expiré)
+4. Si le token est valide, Symfony récupère son contenu et s'en sert pour récupérer en base de données l'entité user correspondante à ce token
+5. Symfony vérifie si le user récupéré a accès à la ressource demandée, vis à vis de ce qui a été défini par exemple dans les access_control du security.yaml
 
-On fait une requête avec nos credentials (email/password par exemple) vers une route de login. Le serveur vérifie si un user avec cet identifiant existe, si oui on récupère le password hashé stocké en base de donnée, on utilise ses information pour hasher le mot de passe de login de la même manière, si les deux hash correspondent, c'est correct, on crée un JWT renvoyé au client
-Le client stock le JWT quelque part (en localStorage par exemple). Toute nouvelle requête contiendra le JWT dans ses Authorization Headers
-Lorsque le serveur reçoit une requête avec un JWT, il vérifie la validité de celui ci (est-ce qu'il a été altéré, sa signature est-elle ok, est-il expiré)
-Si le token est valide, Symfony récupère son contenu et s'en sert pour récupérer en base de données l'entité user correspondante à ce token
-Symfony vérifie si le user récupéré a accès à la ressource demandée, vis à vis de ce qui a été défini par exemple dans les access_control du security.yaml
-Configuration de l'extension JWT
-Dans le fichier de configuration config/packages/security.yaml, on rajoute :
-
+#### Configuration de l'extension JWT
+Dans le fichier de configuration `config/packages/security.yaml`, on rajoute :
+```yaml
 security:
     #...    
     firewalls:
@@ -154,31 +177,41 @@ security:
             pattern:   ^/api
             stateless: true
             jwt: ~
+
+```
+
 La partie login contien dans le check_path la route qui permettra de s'authentifier, on peut la modifier, il faut juste que le check_path corresponde au pattern.
 
 Dans la partie login, on indique quelles url de notre serveur utiliseront l'authentification par JWT, ici ça sera toutes les routes commençant par /api (c'est techniquement modifiable)
 
-Dans le fichier de configuration config/routes.yaml, on rajoute :
 
+Dans le fichier de configuration `config/routes.yaml`, on rajoute :
+```yaml
 api_login_check:
     path: /api/login
+```
 Où le path devra correspondre au check_path indiqué dans le security.yaml
 
-Ensuite on génère une paire de clés privée/publique avec bin/console lexik:jwt:generate-keypair
+Ensuite on génère une paire de clés privée/publique avec `bin/console lexik:jwt:generate-keypair`
 
-Dans le fichier config/packages/lexik_jwt_authentication.yaml on peut rajouter un token_ttl: 100000000000 par exemple pour créer un token avec une date d'expiration très lointaine pour les tests (à retirer en prod)
+Dans le fichier `config/packages/lexik_jwt_authentication.yaml` on peut rajouter un `token_ttl: 100000000000` par exemple pour créer un token avec une date d'expiration très lointaine pour les tests (à retirer en prod)
 
-Utilisation de l'authentification JWT avec ThunderClient
-On fait une requête en POST vers http://localhost:8000/api/login en indiquant dans le body
- {
-     "email":"identifiant@mail.com",
-     "password":"leMotDePasse"
- }
-On copie le token renvoyé
-Pour chaque nouvelle requête, on rajoute dans l'onglet Auth > Bearer le token copié
-Sécurisation des routes
-Pour sécuriser les routes, on peut rajouter dans le config/packages/security.yaml, dans la partie access_control les routes accessibles ou non
+#### Utilisation de l'authentification JWT avec ThunderClient
+1. On fait une requête en POST vers `http://localhost:8000/api/login` en indiquant dans le body 
+   ```json
+    {
+        "email":"identifiant@mail.com",
+        "password":"leMotDePasse"
+    }
+    ```
+2. On copie le token renvoyé
+3. Pour chaque nouvelle requête, on rajoute dans l'onglet Auth > Bearer le token copié
 
+
+### Sécurisation des routes
+Pour sécuriser les routes, on peut rajouter dans le `config/packages/security.yaml`, dans la partie `access_control` les routes accessibles ou non
+
+```yaml
 security:
     enable_authenticator_manager: true
     #...
@@ -186,4 +219,5 @@ security:
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: /api/station, roles: PUBLIC_ACCESS, methods:[GET] }
         - { path: /api/station, roles: ROLE_USER }
+```
 Ici, toutes les routes commençant par /api/admin ne seront accessibles que par les user avec un rôle ROLE_ADMIN, la route /api/station en GET sera accessible par n'importe qui, toutes les autres méthodes de la route /api/station ne seront accessible que par les user avec le rôle ROLE_USER
