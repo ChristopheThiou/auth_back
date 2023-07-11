@@ -10,6 +10,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface {
 
     public function __construct(
         #[Assert\Email]
+		#[Assert\NotBlank]
         private string $email,
         #[Assert\NotBlank]
         #[Assert\Length(min: 4)]
