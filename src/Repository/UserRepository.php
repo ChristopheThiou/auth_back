@@ -27,4 +27,37 @@ class UserRepository {
         }
         return null;
    }
+    /**
+     * @return User[] 
+     */
+    public function findAll(): array
+    {
+        $list = [];
+        $connection = Database::getConnection();
+
+        $query = $connection->prepare("SELECT * FROM user");
+
+        $query->execute();
+
+        foreach ($query->fetchAll() as $line) {
+            $list[] = new User($line['email'], $line['password'], $line['role'], $line['id']);
+        }
+
+        return $list;
+    }
+    /**
+     * @param User 
+     */
+    public function update(User $user) {
+        
+        $connection = Database::getConnection();
+
+        $query = $connection->prepare("UPDATE user SET email=:email, password=:password, role=:role WHERE id=:id");
+        $query->bindValue(':email', $user->getEmail());
+        $query->bindValue(':password', $user->getPassword());
+        $query->bindValue(':role', $user->getRole());
+        $query->bindValue(":id", $user->getId());
+
+        $query->execute();
+    }
 }
